@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatRepoTitle, getGithubRepoApiUrl, normalizeRepoKey, type GithubRepo } from "@/lib/github-projects";
 
-const empty = { title: "", slug: "", description: "", long_description: "", tech: "", image_url: "", github_url: "", live_url: "", achievement: "", featured: false, source: "manual", github_hidden: false, github_sync_enabled: false };
+const empty = { title: "", slug: "", description: "", long_description: "", tech: "", image_url: "", github_url: "", live_url: "", achievement: "", featured: false, source: "manual" as const, github_hidden: false, github_sync_enabled: false };
 
 type ProjectItem = {
   id: string;
