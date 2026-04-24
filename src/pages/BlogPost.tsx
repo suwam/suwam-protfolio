@@ -1,23 +1,39 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Clock, Calendar } from "lucide-react";
+import { ArrowLeft, Calendar, Clock } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Chatbot from "@/components/chat/Chatbot";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { PORTFOLIO } from "@/lib/portfolio-data";
+
+type Post = (typeof PORTFOLIO.posts)[number];
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [post, setPost] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<Post | null>(PORTFOLIO.posts.find((item) => item.slug === slug) ?? null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
-    supabase.from("blog_posts").select("*").eq("slug", slug).maybeSingle()
-      .then(({ data }) => { setPost(data); setLoading(false); });
+    if (!isSupabaseConfigured) return;
+    setLoading(true);
+    supabase
+      .from("blog_posts")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle()
+      .then(({ data }) => {
+        setPost((data as Post | null) ?? PORTFOLIO.posts.find((item) => item.slug === slug) ?? null);
+        setLoading(false);
+      })
+      .catch(() => {
+        setPost(PORTFOLIO.posts.find((item) => item.slug === slug) ?? null);
+        setLoading(false);
+      });
   }, [slug]);
 
   return (
