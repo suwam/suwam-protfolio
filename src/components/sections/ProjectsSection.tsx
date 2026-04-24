@@ -3,10 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Github, ExternalLink, Award, Folder } from "lucide-react";
 import SectionWrapper from "@/components/SectionWrapper";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import itineraryVoyagerImage from "@/assets/itinerary-voyager.png";
-import mazeGeneratorImage from "@/assets/maze-generator.png";
-import fileCompressionImage from "@/assets/file-compression.png";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { PORTFOLIO } from "@/lib/portfolio-data";
 import { formatRepoTitle, getGithubRepoApiUrl, isExcludedGithubRepo, normalizeRepoKey, type GithubRepo } from "@/lib/github-projects";
 
 interface Project {
@@ -39,15 +37,9 @@ interface PortfolioSettings {
 
 const CURATED_PROJECTS = ["itinerary-voyager", "maze-generator", "file-compressor"] as const;
 const CURATED_PROJECT_SET = new Set<string>(CURATED_PROJECTS);
-const PROJECT_IMAGE_MAP: Record<string, string> = {
-  "itinerary-voyager": itineraryVoyagerImage,
-  "maze-generator": mazeGeneratorImage,
-  "file-compressor": fileCompressionImage,
-};
-
 const ProjectsSection = () => {
-  const [projects, setProjects] = useState<DisplayProject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<DisplayProject[]>(PORTFOLIO.projects.map((project) => ({ ...project, isGithubProject: false })));
+  const [loading, setLoading] = useState(false);
 
   const curatedOrder = useMemo<Map<string, number>>(
     () => new Map<string, number>(CURATED_PROJECTS.map((slug, index) => [slug, index])),
@@ -56,6 +48,8 @@ const ProjectsSection = () => {
 
   useEffect(() => {
     const loadProjects = async () => {
+      if (!isSupabaseConfigured) return;
+      setLoading(true);
       try {
         const [{ data: projectRows, error: projectError }, { data: settingsRow, error: settingsError }] = await Promise.all([
           supabase
@@ -77,10 +71,13 @@ const ProjectsSection = () => {
           github_projects_enabled: true,
         }) as PortfolioSettings;
 
-        const manualProjects = storedProjects
+        const manualProjectsFromDb = storedProjects
           .filter((project) => project.source === "manual" && CURATED_PROJECT_SET.has(project.slug))
           .sort((a, b) => (curatedOrder.get(a.slug) ?? 999) - (curatedOrder.get(b.slug) ?? 999))
           .map((project) => ({ ...project, isGithubProject: false }));
+        const manualProjects = manualProjectsFromDb.length > 0
+          ? manualProjectsFromDb
+          : PORTFOLIO.projects.map((project) => ({ ...project, isGithubProject: false }));
 
         const hiddenGithubRepoIds = new Set(
           storedProjects
@@ -139,7 +136,7 @@ const ProjectsSection = () => {
 
         setProjects([...manualProjects, ...githubProjects]);
       } catch {
-        setProjects([]);
+        setProjects(PORTFOLIO.projects.map((project) => ({ ...project, isGithubProject: false })));
       } finally {
         setLoading(false);
       }
@@ -153,7 +150,7 @@ const ProjectsSection = () => {
       id="projects"
       eyebrow="Selected work"
       title={<>Projects I've <span className="text-foreground">built</span></>}
-      description="Highlighted portfolio work first, followed by additional public repositories pulled live from GitHub."
+      description="Selected projects that show product thinking, practical engineering and clean implementation."
     >
       {loading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -173,8 +170,8 @@ const ProjectsSection = () => {
               className="group glass rounded-2xl overflow-hidden hover-lift glow-ring flex flex-col"
             >
               <div className="relative aspect-video bg-gradient-accent overflow-hidden">
-                {(p.image_url || PROJECT_IMAGE_MAP[p.slug]) ? (
-                  <img src={p.image_url || PROJECT_IMAGE_MAP[p.slug]} alt={p.title} loading="lazy" className="w-full h-full object-cover transition-smooth group-hover:scale-105" />
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.title} loading="lazy" className="w-full h-full object-cover transition-smooth group-hover:scale-105" />
                 ) : (
                   <div className="absolute inset-0 grid place-items-center">
                     <div className="absolute inset-0 bg-gradient-accent opacity-90" />
