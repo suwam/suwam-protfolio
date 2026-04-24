@@ -11,14 +11,20 @@ import { toast } from "sonner";
 const CATEGORIES = ["Development", "UI/UX", "College Projects", "Tutorials", "Personal Learnings"];
 
 const empty = { title: "", slug: "", excerpt: "", content: "", category: "Development", tags: "", featured: false, published: true, read_time_minutes: 5 };
+type BlogEditor = typeof empty & {
+  id?: string;
+  tags: string | string[];
+  published_at?: string;
+};
 
 const AdminBlog = () => {
-  const [items, setItems] = useState<any[]>([]);
-  const [editing, setEditing] = useState<any>(null);
+  const [items, setItems] = useState<BlogEditor[]>([]);
+  const [editing, setEditing] = useState<BlogEditor | null>(null);
   const load = () => supabase.from("blog_posts").select("*").order("published_at", { ascending: false }).then(({ data }) => data && setItems(data));
   useEffect(() => { load(); }, []);
 
   const save = async () => {
+    if (!editing) return;
     const payload = { ...editing, tags: typeof editing.tags === "string" ? editing.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : editing.tags };
     const { id, ...rest } = payload;
     const { error } = id ? await supabase.from("blog_posts").update(rest).eq("id", id) : await supabase.from("blog_posts").insert(rest);
