@@ -35,7 +35,7 @@ const ContactSection = () => {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("contact_submissions").insert(parsed.data as any);
+    const { error } = await supabase.from("contact_submissions").insert(parsed.data);
     setLoading(false);
     if (error) {
       toast.error("Could not send. Try again?");
