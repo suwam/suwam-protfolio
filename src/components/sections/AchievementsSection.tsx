@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import SectionWrapper from "@/components/SectionWrapper";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { PORTFOLIO } from "@/lib/portfolio-data";
 
 interface Achievement {
   id: string;
@@ -12,14 +13,16 @@ interface Achievement {
 }
 
 const AchievementsSection = () => {
-  const [items, setItems] = useState<Achievement[]>([]);
+  const [items, setItems] = useState<Achievement[]>(PORTFOLIO.achievements);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
     supabase
       .from("achievements")
       .select("id,title,description,date_text")
       .order("display_order")
-      .then(({ data }) => data && setItems(data));
+      .then(({ data }) => data && data.length > 0 && setItems(data))
+      .catch(() => setItems(PORTFOLIO.achievements));
   }, []);
 
   return (
