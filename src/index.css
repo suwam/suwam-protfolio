@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 /* ===================================================================
-   Suwam Subedi — Portfolio Design System
+   Suwam Subedi - Portfolio Design System
    All colors HSL. All tokens live here.
 =================================================================== */
 
 @layer base {
   :root {
-    /* Light theme — soft cloud */
+    /* Light theme - soft cloud */
     --background: 220 40% 98%;
     --foreground: 222 47% 11%;
 
