@@ -14,12 +14,14 @@ interface Props {
 }
 
 const AdminSimple = ({ table, title, fields }: Props) => {
-  const [items, setItems] = useState<any[]>([]);
-  const [editing, setEditing] = useState<any>(null);
+  type SimpleItem = { id?: string; title?: string; description?: string | null; issuer?: string | null; [key: string]: string | null | undefined };
+  const [items, setItems] = useState<SimpleItem[]>([]);
+  const [editing, setEditing] = useState<SimpleItem | null>(null);
   const load = () => supabase.from(table).select("*").order("display_order").then(({ data }) => data && setItems(data));
   useEffect(() => { load(); }, [table]);
 
   const save = async () => {
+    if (!editing) return;
     const { id, ...rest } = editing;
     const { error } = id ? await supabase.from(table).update(rest).eq("id", id) : await supabase.from(table).insert(rest);
     if (error) toast.error(error.message); else { toast.success("Saved"); setEditing(null); load(); }
