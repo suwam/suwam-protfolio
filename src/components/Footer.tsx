@@ -9,7 +9,7 @@ const Footer = () => (
         <div className="h-8 w-8 rounded-lg bg-gradient-accent grid place-items-center font-display font-bold text-primary-foreground">S</div>
         <div className="text-sm">
           <div className="font-display font-semibold">Suwam Subedi</div>
-          <div className="text-muted-foreground text-xs">© 2026 — All rights reserved</div>
+          <div className="text-muted-foreground text-xs">Copyright 2026 - All rights reserved</div>
         </div>
       </div>
       <div className="flex items-center gap-2">
