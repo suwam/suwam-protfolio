@@ -43,9 +43,13 @@ type GithubRepoRow = {
   record?: ProjectItem;
 };
 
+type ProjectEditor = Omit<ProjectItem, "tech"> & {
+  tech: string[] | string;
+};
+
 const AdminProjects = () => {
   const [items, setItems] = useState<ProjectItem[]>([]);
-  const [editing, setEditing] = useState<any>(null);
+  const [editing, setEditing] = useState<ProjectEditor | null>(null);
   const [settings, setSettings] = useState<PortfolioSettings | null>(null);
   const [githubRepos, setGithubRepos] = useState<GithubRepo[]>([]);
   const [busyRepoId, setBusyRepoId] = useState<number | null>(null);
@@ -93,6 +97,7 @@ const AdminProjects = () => {
   }, [settings?.github_username]);
 
   const save = async () => {
+    if (!editing) return;
     const payload = { ...editing, tech: typeof editing.tech === "string" ? editing.tech.split(",").map((t: string) => t.trim()).filter(Boolean) : editing.tech };
     const { id, ...rest } = payload;
     const { error } = id ? await supabase.from("projects").update(rest).eq("id", id) : await supabase.from("projects").insert(rest);
@@ -131,8 +136,8 @@ const AdminProjects = () => {
       const { data } = supabase.storage.from("project-images").getPublicUrl(path);
       setEditing({ ...editing, image_url: data.publicUrl });
       toast.success("Image uploaded");
-    } catch (e: any) {
-      toast.error(e.message || "Upload failed");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setUploading(false);
     }
