@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { PORTFOLIO } from "@/lib/portfolio-data";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -28,6 +28,12 @@ const ContactSection = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    if (!isSupabaseConfigured) {
+      const subject = encodeURIComponent(`Portfolio message from ${parsed.data.name}`);
+      const body = encodeURIComponent(`${parsed.data.message}\n\nReply to: ${parsed.data.email}`);
+      window.location.href = `mailto:${PORTFOLIO.email}?subject=${subject}&body=${body}`;
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.from("contact_submissions").insert(parsed.data as any);
     setLoading(false);
@@ -35,7 +41,7 @@ const ContactSection = () => {
       toast.error("Could not send. Try again?");
       return;
     }
-    toast.success("Message sent — I'll get back to you soon!");
+    toast.success("Message sent - I'll get back to you soon!");
     setForm({ name: "", email: "", message: "" });
   };
 
@@ -44,7 +50,7 @@ const ContactSection = () => {
       id="contact"
       eyebrow="Get in touch"
       title={<>Let's <span className="text-foreground">build something</span></>}
-      description="Have a project, internship or just want to say hi? Drop a message — I read every one."
+      description="Have a project, internship or just want to say hi? Drop a message - I read every one."
     >
       <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8">
         <motion.div
@@ -106,7 +112,7 @@ const ContactSection = () => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="message">Message</Label>
-            <Textarea id="message" rows={6} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell me what you're building…" maxLength={5000} />
+            <Textarea id="message" rows={6} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell me what you're building..." maxLength={5000} />
           </div>
           <Button type="submit" disabled={loading} size="lg" className="w-full bg-gradient-accent text-primary-foreground rounded-xl shadow-elegant hover:shadow-glow">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (<><Send className="mr-2 h-4 w-4" /> Send message</>)}
