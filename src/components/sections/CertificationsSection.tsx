@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import SectionWrapper from "@/components/SectionWrapper";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { PORTFOLIO } from "@/lib/portfolio-data";
 
 interface Cert {
   id: string;
@@ -13,10 +14,16 @@ interface Cert {
 }
 
 const CertificationsSection = () => {
-  const [items, setItems] = useState<Cert[]>([]);
+  const [items, setItems] = useState<Cert[]>(PORTFOLIO.certifications);
 
   useEffect(() => {
-    supabase.from("certifications").select("*").order("display_order").then(({ data }) => data && setItems(data as Cert[]));
+    if (!isSupabaseConfigured) return;
+    supabase
+      .from("certifications")
+      .select("*")
+      .order("display_order")
+      .then(({ data }) => data && data.length > 0 && setItems(data as Cert[]))
+      .catch(() => setItems(PORTFOLIO.certifications));
   }, []);
 
   return (
@@ -40,7 +47,7 @@ const CertificationsSection = () => {
           >
             <BadgeCheck className="h-7 w-7 text-primary mb-3 group-hover:text-secondary transition-smooth" />
             <h3 className="font-semibold text-sm mb-1 leading-snug">{c.title}</h3>
-            <div className="text-xs text-muted-foreground">{c.issuer}{c.date_text ? ` · ${c.date_text}` : ""}</div>
+            <div className="text-xs text-muted-foreground">{c.issuer}{c.date_text ? ` / ${c.date_text}` : ""}</div>
           </motion.a>
         ))}
       </div>
