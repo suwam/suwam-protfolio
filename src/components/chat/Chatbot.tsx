@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Sparkles, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, MessageCircle, Send, Sparkles, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -24,15 +24,24 @@ const Chatbot = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", content: "Hey 👋 I'm Suwam's AI assistant. Ask about his projects, ASLENIX role, tech stack, or the best way to reach him." },
+    { role: "assistant", content: "Hey, I'm Suwam's AI assistant. Ask about his projects, ASLENIX role, tech stack, or the best way to reach him." },
   ]);
   const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.from("site_settings").select("chatbot_enabled").maybeSingle().then(({ data }) => {
-      if (data && data.chatbot_enabled === false) setEnabled(false);
-    });
+    if (!isSupabaseConfigured) {
+      setEnabled(false);
+      return;
+    }
+    supabase
+      .from("site_settings")
+      .select("chatbot_enabled")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && data.chatbot_enabled === false) setEnabled(false);
+      })
+      .catch(() => setEnabled(false));
   }, []);
 
   useEffect(() => {
@@ -58,7 +67,7 @@ const Chatbot = () => {
         },
         body: JSON.stringify({ messages: next.map(({ role, content }) => ({ role, content })) }),
       });
-      if (resp.status === 429) { toast.error("Too many requests — try again soon."); setStreaming(false); return; }
+      if (resp.status === 429) { toast.error("Too many requests - try again soon."); setStreaming(false); return; }
       if (resp.status === 402) { toast.error("AI credits exhausted."); setStreaming(false); return; }
       if (!resp.ok || !resp.body) throw new Error("stream failed");
 
@@ -95,7 +104,7 @@ const Chatbot = () => {
           }
         }
       }
-    } catch (e) {
+    } catch {
       toast.error("Something went wrong. Try again.");
       setMessages((prev) => prev.slice(0, -1));
     } finally {
@@ -154,7 +163,7 @@ const Chatbot = () => {
                   }`}>
                     {m.role === "assistant" ? (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-headings:my-2">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content || "…"}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content || "..."}</ReactMarkdown>
                       </div>
                     ) : m.content}
                   </div>
@@ -183,7 +192,7 @@ const Chatbot = () => {
             )}
 
             <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="p-3 border-t border-border/60 flex gap-2">
-              <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask anything…" disabled={streaming} className="rounded-xl" />
+              <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask anything..." disabled={streaming} className="rounded-xl" />
               <Button type="submit" size="icon" disabled={streaming || !input.trim()} className="rounded-xl bg-gradient-accent text-primary-foreground shrink-0">
                 {streaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
