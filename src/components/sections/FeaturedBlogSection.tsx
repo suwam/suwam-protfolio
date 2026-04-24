@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Clock, Calendar } from "lucide-react";
 import SectionWrapper from "@/components/SectionWrapper";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { PORTFOLIO } from "@/lib/portfolio-data";
 
 interface Post {
   id: string;
@@ -18,9 +19,10 @@ interface Post {
 }
 
 const FeaturedBlogSection = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<Post[]>(PORTFOLIO.posts);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
     supabase
       .from("blog_posts")
       .select("id,title,slug,excerpt,category,cover_image,read_time_minutes,published_at")
@@ -28,7 +30,8 @@ const FeaturedBlogSection = () => {
       .order("featured", { ascending: false })
       .order("published_at", { ascending: false })
       .limit(3)
-      .then(({ data }) => data && setPosts(data as Post[]));
+      .then(({ data }) => data && data.length > 0 && setPosts(data as Post[]))
+      .catch(() => setPosts(PORTFOLIO.posts));
   }, []);
 
   if (posts.length === 0) return null;
